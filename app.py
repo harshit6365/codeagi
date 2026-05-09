@@ -40,7 +40,7 @@ with st.sidebar:
     """, unsafe_allow_html=True)
     st.divider()
 
-    pages = ["🏠 Home", "🐛 Bug Finder", "⚡ Code Runner", "🛠 Code Fixer", "🤖 Prototype Builder"]
+    pages = ["🏠 Home", "🐛 Bug Finder", "⚡ Code Runner", "🛠 Code Fixer", "🤖 Prototype Builder", "🔐 Security Scanner"]
     selected = st.radio("", pages, index=pages.index(st.session_state.current_page))
     st.session_state.current_page = selected
 
@@ -54,7 +54,7 @@ if page == "🏠 Home":
     st.markdown('<div class="codeagi-subtitle">AGI-powered Code Intelligence — Find bugs, fix code, run programs, build prototypes</div>', unsafe_allow_html=True)
     st.divider()
 
-    col1, col2, col3, col4 = st.columns(4)
+    col1, col2, col3, col4, col5 = st.columns(5)
 
     with col1:
         st.markdown('<div class="metric-card"><div class="metric-num">🐛</div><div style="font-size:1rem;font-weight:600;color:white;margin-top:8px;">Bug Finder</div><div class="metric-label">Find every bug instantly</div></div>', unsafe_allow_html=True)
@@ -79,6 +79,10 @@ if page == "🏠 Home":
         if st.button("Open Prototype Builder →", key="btn_proto"):
             st.session_state.current_page = "🤖 Prototype Builder"
             st.rerun()
+    with col5:
+        st.markdown('<div class="metric-card"><div class="metric-num">🔐</div><div style="font-size:1rem;font-weight:600;color:white;margin-top:8px;">Security Scanner</div><div class="metric-label">Find vulnerabilities</div></div>', unsafe_allow_html=True)
+        if st.button("Open Security Scanner →", key="btn_sec"):
+            st.session_state.current_page = "🔐 Security Scanner"
 
     st.divider()
     st.markdown("""
@@ -233,3 +237,66 @@ elif page == "🤖 Prototype Builder":
             st.divider()
             st.markdown(prototype)
             st.download_button("📥 Download Code", data=prototype, file_name="prototype.txt", mime="text/plain")
+   
+elif page == "🔐 Security Scanner":
+    st.markdown('<div class="codeagi-title">🔐 Security Scanner</div>', unsafe_allow_html=True)
+    st.markdown('<div class="codeagi-subtitle">Scan your code for security vulnerabilities — powered by AGI</div>', unsafe_allow_html=True)
+    st.divider()
+
+    col1, col2 = st.columns([3, 1])
+    with col1:
+        code_input = st.text_area("Paste your code to scan", height=300, placeholder="Paste your code here...")
+    with col2:
+        language = st.selectbox("Language", ["Python", "JavaScript", "Java", "PHP", "SQL"])
+        scan_type = st.multiselect(
+            "Scan for",
+            ["SQL Injection", "XSS", "Hardcoded Passwords", "Insecure API Keys", "Input Validation", "All Vulnerabilities"],
+            default=["All Vulnerabilities"]
+        )
+        st.markdown("<br>", unsafe_allow_html=True)
+        scan_btn = st.button("Scan Code 🔐")
+
+    if scan_btn:
+        if not code_input:
+            st.error("Please paste your code first!")
+        else:
+            prompt = f"""
+            You are a senior cybersecurity expert.
+            Scan this {language} code for security vulnerabilities.
+            Scan for: {', '.join(scan_type)}
+            
+            For each vulnerability:
+            1. Vulnerability name
+            2. Severity: 🔴 HIGH / 🟡 MEDIUM / 🟢 LOW
+            3. Line number
+            4. Simple explanation of risk
+            5. How attacker could exploit it
+            6. Fixed secure code
+            
+            Also give:
+            - Overall security score out of 10
+            - Top 3 security improvements
+            
+            Code:
+```{language}
+            {code_input}
+```
+            """
+
+            with st.spinner("🔐 Scanning for vulnerabilities..."):
+                response = client.chat.completions.create(
+                    model="llama-3.3-70b-versatile",
+                    messages=[{"role": "user", "content": prompt}]
+                )
+                result = response.choices[0].message.content
+
+            st.success("✅ Security Scan Complete!")
+            st.divider()
+            st.markdown(result)
+            st.divider()
+            st.download_button(
+                "📥 Download Security Report",
+                data=result,
+                file_name="security_report.txt",
+                mime="text/plain"
+            )
